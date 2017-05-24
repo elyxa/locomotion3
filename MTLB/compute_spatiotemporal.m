@@ -28,8 +28,6 @@ Cad = 120./GCT;
 %     rStP(i) = rIC_time(i) - lIC_time(i);
 % end
 
-% double support - only with Toe Off data
-%DS = TDS + IDS;
 
 SL=[];
 SV=[];

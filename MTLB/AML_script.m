@@ -97,19 +97,42 @@ figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2)
 [~, R_HEEL_STRIKE] = findpeaks(-KIN.Pos.R.HEE(3,:), 'MinPeakDistance',50);
 
 % Find Toe-off
-L_TOE_OFF = toeoff(KIN, 'L');
-R_TOE_OFF = toeoff(KIN, 'R');
+[~, R_Toe_STRIKE] = findpeaks(KIN.Pos.R.TOE(3,:),'MinPeakDistance',70);
+for i = 1:(length(R_Toe_STRIKE)-1)
+[~, Toe_off] = findpeaks(-KIN.Pos.R.TOE(3,R_Toe_STRIKE(i):R_Toe_STRIKE(i+1)),'MinPeakDistance',R_Toe_STRIKE(i+1)-R_Toe_STRIKE(i)-1);
+R_TOE_OFF(i) = Toe_off+R_Toe_STRIKE(i);
+end
+ 
+[~, L_Toe_STRIKE] = findpeaks(KIN.Pos.L.TOE(3,:),'MinPeakDistance',70);
+for i = 1:(length(L_Toe_STRIKE)-1)
+[~, Toe_off_L] = findpeaks(-KIN.Pos.L.TOE(3,L_Toe_STRIKE(i):L_Toe_STRIKE(i+1)),'MinPeakDistance',L_Toe_STRIKE(i+1)-L_Toe_STRIKE(i)-1);
+L_TOE_OFF(i) = Toe_off_L+L_Toe_STRIKE(i);
+end
 
-% Remove unesuful points 
+%FOR TOE OFF
+
+R_HEEL_STRIKE=R_HEEL_STRIKE(R_HEEL_STRIKE<max(R_TOE_OFF));
+R_TOE_OFF=R_TOE_OFF(R_TOE_OFF>min(R_HEEL_STRIKE));
+ 
+st_r=find(R_HEEL_STRIKE(R_HEEL_STRIKE<min(R_TOE_OFF)));
+R_HEEL_STRIKE=R_HEEL_STRIKE(st_r(end):end);
+ 
+R_HEEL_STRIKE=R_HEEL_STRIKE(R_HEEL_STRIKE<max(R_TOE_OFF));
  
 L_HEEL_STRIKE=L_HEEL_STRIKE(L_HEEL_STRIKE<max(L_TOE_OFF));
 L_TOE_OFF=L_TOE_OFF(L_TOE_OFF>min(L_HEEL_STRIKE));
  
-st=find(L_HEEL_STRIKE(L_HEEL_STRIKE<min(L_TOE_OFF)));
-L_HEEL_STRIKE=L_HEEL_STRIKE(st(end):end);
+st_l=find(L_HEEL_STRIKE(L_HEEL_STRIKE<min(L_TOE_OFF)));
+L_HEEL_STRIKE=L_HEEL_STRIKE(st_l(end):end);
+ 
+L_HEEL_STRIKE=L_HEEL_STRIKE(L_HEEL_STRIKE<max(L_TOE_OFF));
 
 
-% Undrift heel and toe
+%% UNHEALTHY - gait events
+
+[R_HEEL_STRIKE, L_HEEL_STRIKE, R_TOE_OFF, L_TOE_OFF ] = read_gait_events(gaitFile, KINtime);
+
+%% Undrift heel and toe
 R_heel_signal = heel_drift_removal(KIN, R_HEEL_STRIKE, 'R');
 L_heel_signal = heel_drift_removal(KIN, L_HEEL_STRIKE, 'L');
 
@@ -117,30 +140,24 @@ R_toe_signal = toe_drift_removal(KIN, KINtime, 'R');
 L_toe_signal = toe_drift_removal(KIN, KINtime, 'L');
 
 
-
-%% Plot left/right heel markers vertical vs time (+ heel-strikes)
+%% Plot left/right heel (+ toe) markers vertical vs time (+ heel-strikes)
 figure, plot(KINtime(:,2), L_heel_signal,'linewidth',2);
 hold on, plot(KINtime(:,2), L_toe_signal,'linewidth',2);
 plot( KINtime(L_HEEL_STRIKE,2), 1 ,'o');
 plot( KINtime(L_TOE_OFF,2), 1 ,'*');
-
+title('Left heel and toe markers vertical vs time + HS and TO');
 
 figure, plot(KINtime(:,2),  R_heel_signal,'linewidth',2);
 hold on, plot(KINtime(:,2), R_toe_signal,'linewidth',2);
 plot( KINtime(R_HEEL_STRIKE,2), 1 ,'o');
 plot( KINtime(R_TOE_OFF,2), 1 ,'*');
+title('Right heel and toe markers vertical vs time + HS and TO');
 
 
 % The Heel Strike have been evaluated as the minima of the z component of
 % the heel marker. It could also be visualized through the z component of the same marker 
 % (when the plot becomes flat)
 % The Toe-offs have been evaluated as...
-
-
-
-%% UNHEALTHY - gait events
-
-[R_HEEL_STRIKE, L_HEEL_STRIKE, R_TOE_OFF, L_TOE_OFF ] = read_gait_events(gaitFile);
 
 
 %% compute gait parameters of your choice (at least 30 params based on kinematics and 5 based on
@@ -167,10 +184,11 @@ PCI = intercycle_var( R_HEEL_STRIKE,  L_HEEL_STRIKE); %phase coordination index 
 [elev_angles, elev_angles_names] = elevation_angles(KIN, 'R');
 [elev_angles, elev_angles_names] = elevation_angles(KIN, 'L');
 
-% We geet 2 feature x 413 (n of frames -1)
+% We get 2 feature x 413 (n of frames -1)
 [en_features, en_names] = com_energy(KIN, Measures.Mass);
 
-
+% We get
+DS = double_support(R_HEEL_STRIKE,  L_HEEL_STRIKE, R_TOE_OFF, L_TOE_OFF, KINtime);
 
 %% Other stuff we still need
 
@@ -180,7 +198,6 @@ PCI = intercycle_var( R_HEEL_STRIKE,  L_HEEL_STRIKE); %phase coordination index 
 % step width
 % transverse foot angles 
 % step period
-% double stance - toe-off
 % symmetry
 % velocities
 %Foot Angular velocity
