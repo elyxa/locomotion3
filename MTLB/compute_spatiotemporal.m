@@ -46,7 +46,10 @@ end
 
 
 temporal_features = [GCT; Cad; SL; SV];
-tempfeatures_names = ['GCT         '; 'Cadence     '; 'StrideLength'; 'GaitSpeed   '];
+tempfeatures_names = ['GCT         '; 
+                      'Cadence     '; 
+                      'StrideLength'; 
+                      'GaitSpeed   '];
 
 
 

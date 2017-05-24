@@ -14,7 +14,7 @@ addpath(['../Healthy/Healthy2'])
 %% LOAD HEALTHY
 
 % Healthy subject #1
-    Filename ='Healthy1_Walk03.c3d';
+    %Filename ='Healthy1_Walk03.c3d';
     %Filename ='Healthy1_Walk04.c3d';
     %Filename ='Healthy1_Walk05.c3d';
     %Filename ='Healthy1_Walk06.c3d';
@@ -29,30 +29,28 @@ addpath(['../Healthy/Healthy2'])
 %% LOAD UNHAELTHY + read the gait file to set gait events
 
 % Unhealthy subject - Robot, NO crutches
-    %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05.c3d';
-    %gaitFile = textread('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05_GAIT.c3d');
+    Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05.c3d';
+    gaitFile = readtext('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05_GAIT.csv');
 
     %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06.c3d';
-    %gaitFile = textread('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06_GAIT.c3d');
+    %gaitFile = readtext('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06_GAIT.csv');
 
     %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_07.c3d';
-    %gaitFile = textread('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_07_GAIT.c3d');
+    %gaitFile = readtext('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_07_GAIT.csv');
     
     %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_08.c3d';
-    %gaitFile = textread('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_08_GAIT.c3d');
+    %gaitFile = readtext('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_08_GAIT.csv');
 
 
 % Unhealthy subject - NO robot, 2 crutches
     %Filename = 'SCI_HCU_20150505_02OVGa_AD_01.c3d';
-    %gaitFile = textread('SCI_HCU_20150505_02OVGa_AD_01_GAIT.c3d');
+    %gaitFile = readtext('SCI_HCU_20150505_02OVGa_AD_01_GAIT.c3d');
 
     %Filename = 'SCI_HCU_20150505_02OVGa_AD_02.c3d';
-    %gaitFile = textread('SCI_HCU_20150505_02OVGa_AD_02_GAIT.c3d');
+    %gaitFile = readtext('SCI_HCU_20150505_02OVGa_AD_02_GAIT.c3d');
 
     %Filename = 'SCI_HCU_20150505_02OVGa_AD_03.c3d';
-    %gaitFile = textread('SCI_HCU_20150505_02OVGa_AD_03_GAIT.c3d');
-
-
+    %gaitFile = readtext('SCI_HCU_20150505_02OVGa_AD_03_GAIT.c3d');
 
 
 %% Load the file
@@ -92,7 +90,7 @@ EMGtime = [EMGtime, (EMGtime-1)./EMGfreq];
 %% Plot left heel marker (vertical vs longitudinal)
 figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2)
 
-%% detect gait events (by eye) and show a graph
+%% HEALTHY - detect gait events and show a graph
 
 % Find Heel-strikes
 [~, L_HEEL_STRIKE] = findpeaks(-KIN.Pos.L.HEE(3,:), 'MinPeakDistance',50);
@@ -102,6 +100,15 @@ figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2)
 L_TOE_OFF = toeoff(KIN, 'L');
 R_TOE_OFF = toeoff(KIN, 'R');
 
+% Remove unesuful points 
+ 
+L_HEEL_STRIKE=L_HEEL_STRIKE(L_HEEL_STRIKE<max(L_TOE_OFF));
+L_TOE_OFF=L_TOE_OFF(L_TOE_OFF>min(L_HEEL_STRIKE));
+ 
+st=find(L_HEEL_STRIKE(L_HEEL_STRIKE<min(L_TOE_OFF)));
+L_HEEL_STRIKE=L_HEEL_STRIKE(st(end):end);
+
+
 % Undrift heel and toe
 R_heel_signal = heel_drift_removal(KIN, R_HEEL_STRIKE, 'R');
 L_heel_signal = heel_drift_removal(KIN, L_HEEL_STRIKE, 'L');
@@ -110,9 +117,8 @@ R_toe_signal = toe_drift_removal(KIN, KINtime, 'R');
 L_toe_signal = toe_drift_removal(KIN, KINtime, 'L');
 
 
-%Note: SHOW TOE OFF GRAPHICALLY
 
-% Plot left/right heel markers vertical vs time (+ heel-strikes)
+%% Plot left/right heel markers vertical vs time (+ heel-strikes)
 figure, plot(KINtime(:,2), L_heel_signal,'linewidth',2);
 hold on, plot(KINtime(:,2), L_toe_signal,'linewidth',2);
 plot( KINtime(L_HEEL_STRIKE,2), 1 ,'o');
@@ -129,6 +135,12 @@ plot( KINtime(R_TOE_OFF,2), 1 ,'*');
 % the heel marker. It could also be visualized through the z component of the same marker 
 % (when the plot becomes flat)
 % The Toe-offs have been evaluated as...
+
+
+
+%% UNHEALTHY - gait events
+
+[R_HEEL_STRIKE, L_HEEL_STRIKE, R_TOE_OFF, L_TOE_OFF ] = read_gait_events(gaitFile);
 
 
 %% compute gait parameters of your choice (at least 30 params based on kinematics and 5 based on
