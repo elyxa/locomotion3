@@ -11,34 +11,51 @@ addpath(['../SCI_HCU/SCI_HCU-noRobot2Crutches'])
 addpath(['../SCI_HCU/SCI_HCU-RobotnoCrutches']) %go up folder
 addpath(['../Healthy/Healthy2'])
 
-%% LOAD - select only one of these at time =)
+%% LOAD HEALTHY
 
 % Healthy subject #1
-Filename ='Healthy1_Walk03.c3d';
-%Filename ='Healthy1_Walk04.c3d';
-%Filename ='Healthy1_Walk05.c3d';
-%Filename ='Healthy1_Walk06.c3d';
+    Filename ='Healthy1_Walk03.c3d';
+    %Filename ='Healthy1_Walk04.c3d';
+    %Filename ='Healthy1_Walk05.c3d';
+    %Filename ='Healthy1_Walk06.c3d';
 
 % Healthy subject #2
-%Filename ='Healthy2_Walk01.c3d';
-%Filename ='Healthy2_Walk03.c3d';
-%Filename ='Healthy2_Walk04.c3d';
-%Filename ='Healthy2_Walk05.c3d';
-%Filename ='Healthy2_Walk06.c3d';
+    %Filename ='Healthy2_Walk01.c3d';
+    %Filename ='Healthy2_Walk03.c3d';
+    %Filename ='Healthy2_Walk04.c3d';
+    %Filename ='Healthy2_Walk05.c3d';
+    %Filename ='Healthy2_Walk06.c3d';
+
+%% LOAD UNHAELTHY + read the gait file to set gait events
 
 % Unhealthy subject - Robot, NO crutches
-%Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05.c3d';
-%Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06.c3d';
-%Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_07.c3d';
-%Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_08.c3d';
+    %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05.c3d';
+    %gaitFile = textread('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05_GAIT.c3d');
+
+    %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06.c3d';
+    %gaitFile = textread('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06_GAIT.c3d');
+
+    %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_07.c3d';
+    %gaitFile = textread('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_07_GAIT.c3d');
+    
+    %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_08.c3d';
+    %gaitFile = textread('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_08_GAIT.c3d');
 
 
 % Unhealthy subject - NO robot, 2 crutches
-%Filename = 'SCI_HCU_20150505_02OVGa_AD_01.c3d';
-%Filename = 'SCI_HCU_20150505_02OVGa_AD_02.c3d';
-%Filename = 'SCI_HCU_20150505_02OVGa_AD_02.c3d';
+    %Filename = 'SCI_HCU_20150505_02OVGa_AD_01.c3d';
+    %gaitFile = textread('SCI_HCU_20150505_02OVGa_AD_01_GAIT.c3d');
 
-% Load the file
+    %Filename = 'SCI_HCU_20150505_02OVGa_AD_02.c3d';
+    %gaitFile = textread('SCI_HCU_20150505_02OVGa_AD_02_GAIT.c3d');
+
+    %Filename = 'SCI_HCU_20150505_02OVGa_AD_03.c3d';
+    %gaitFile = textread('SCI_HCU_20150505_02OVGa_AD_03_GAIT.c3d');
+
+
+
+
+%% Load the file
 [KIN,KINfreq,EMG,EMGfreq,Measures]=load_c3d(Filename);
 
 % Data you have (KIN=kinematic / EMG=Electromyographic):
@@ -71,23 +88,19 @@ KINtime = [KINtime, (KINtime-1)./KINfreq];
 EMGtime = [1:length(EMG.L.TA(1,:))]';
 EMGtime = [EMGtime, (EMGtime-1)./EMGfreq];
 
-%% read GAIT file to set the gait events 
-
-
-% create for healthy - plot initial contact and last contact 
-
 
 %% Plot left heel marker (vertical vs longitudinal)
-
 figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2)
-
 
 %% detect gait events (by eye) and show a graph
 
+% Find Heel-strikes
+[~, L_HEEL_STRIKE] = findpeaks(-KIN.Pos.L.HEE(3,:), 'MinPeakDistance',50);
+[~, R_HEEL_STRIKE] = findpeaks(-KIN.Pos.R.HEE(3,:), 'MinPeakDistance',50);
 
-% Heel strikes
-[~, L_HEEL_STRIKE] = findpeaks(-KIN.Pos.L.HEE(3,:), 'MinPeakDistance',50)
-[~, R_HEEL_STRIKE] = findpeaks(-KIN.Pos.R.HEE(3,:), 'MinPeakDistance',50)
+% Find Toe-off
+L_TOE_OFF = toeoff(KIN, 'L');
+R_TOE_OFF = toeoff(KIN, 'R');
 
 % Undrift heel and toe
 R_heel_signal = heel_drift_removal(KIN, R_HEEL_STRIKE, 'R');
@@ -103,15 +116,19 @@ L_toe_signal = toe_drift_removal(KIN, KINtime, 'L');
 figure, plot(KINtime(:,2), L_heel_signal,'linewidth',2);
 hold on, plot(KINtime(:,2), L_toe_signal,'linewidth',2);
 plot( KINtime(L_HEEL_STRIKE,2), 1 ,'o');
+plot( KINtime(L_TOE_OFF,2), 1 ,'*');
+
 
 figure, plot(KINtime(:,2),  R_heel_signal,'linewidth',2);
 hold on, plot(KINtime(:,2), R_toe_signal,'linewidth',2);
 plot( KINtime(R_HEEL_STRIKE,2), 1 ,'o');
+plot( KINtime(R_TOE_OFF,2), 1 ,'*');
 
 
 % The Heel Strike have been evaluated as the minima of the z component of
 % the heel marker. It could also be visualized through the z component of the same marker 
 % (when the plot becomes flat)
+% The Toe-offs have been evaluated as...
 
 
 %% compute gait parameters of your choice (at least 30 params based on kinematics and 5 based on
@@ -169,11 +186,19 @@ PCI = intercycle_var( R_HEEL_STRIKE,  L_HEEL_STRIKE); %phase coordination index 
 % and end of the signal
 % beginning and end of the signal (duration)
 % mean, integral, max
+
+
 %% compute gait parameters
-%file with patient and all the features to compute
+%(text?) file with patient and all the features to compute
+
+
 %% save all parameters in a single Excel sheet. The final excel sheet that you should produce is
-%constructed as follows: first columns = text columns with the conditions (less than 10 columns in total); then columns of parameters; first line = header line, other lines = 1 line per gait cycle
+%constructed as follows: first columns = text columns with the conditions 
+%(less than 10 columns in total); then columns of parameters; first line = header line, 
+%other lines = 1 line per gait cycle
+
 %% load the .txt file in GSTAT (you can find the executable on the moodle) - perform the PCA
+
 %% discuss, extract relevant parameters, discuss, conclude
 
 
