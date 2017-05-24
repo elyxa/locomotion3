@@ -1,4 +1,4 @@
-function [] = com_energy(KIN, m) 
+function [features, features_names] = com_energy(KIN, m) 
 
 
 g = 9.80665;
@@ -16,17 +16,23 @@ Vy = diff(centroid(1,:));
 Vx = diff(centroid(2,:));
 Vz = diff(centroid(3,:));
 
-%Ek_x = 0.5.*m.*Vx.^2
+Ek_x = 0.5.*m.*Vx.^2
 Ek_y = 0.5.*m.*Vy.^2
 Ek_z = 0.5.*m.*(Vz.^2)
 
-Ek = Ek_y + Ek_z;
+Ek = Ek_y + Ek_z + Ek_x;
 Ep = m*g.*Vz;
 
 Etot = Ek + Ep;
 
 figure
-plot(zscore(Ek))
+plot(zscore(Ek));
 hold on
-plot(zscore(Ep))
+plot(zscore(Ep));
+
+
+
+features= [Ek; Ep];
+features_names = ['Kinetic energy  '; 
+                  'Potential energy'];
 end

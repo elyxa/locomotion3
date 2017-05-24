@@ -2,16 +2,41 @@ clear all
 close all
 clc
 
-%% load healthy raw data
-
 % Select the c3d file to read:
-cd('/Users/elisabettamessina/Desktop/EPFL2sem/locomotion/Assignments/Neuroscience_locomotion/MTLB/')
+cd('/Users/elisabettamessina/Desktop/Neuroscience_locomotion/MTLB/')
 %addpath(['./']) %fold I'm in
 addpath(['../Healthy/Healthy1']) %go up folder
+addpath(['../Healthy/Healthy2']) %go up folder
 addpath(['../SCI_HCU/SCI_HCU-noRobot2Crutches'])
 addpath(['../SCI_HCU/SCI_HCU-RobotnoCrutches']) %go up folder
 addpath(['../Healthy/Healthy2'])
-Filename = 'Healthy1_Walk03.c3d';
+
+%% LOAD - select only one of these at time =)
+
+% Healthy subject #1
+Filename ='Healthy1_Walk03.c3d';
+%Filename ='Healthy1_Walk04.c3d';
+%Filename ='Healthy1_Walk05.c3d';
+%Filename ='Healthy1_Walk06.c3d';
+
+% Healthy subject #2
+%Filename ='Healthy2_Walk01.c3d';
+%Filename ='Healthy2_Walk03.c3d';
+%Filename ='Healthy2_Walk04.c3d';
+%Filename ='Healthy2_Walk05.c3d';
+%Filename ='Healthy2_Walk06.c3d';
+
+% Unhealthy subject - Robot, NO crutches
+%Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05.c3d';
+%Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06.c3d';
+%Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_07.c3d';
+%Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_08.c3d';
+
+
+% Unhealthy subject - NO robot, 2 crutches
+%Filename = 'SCI_HCU_20150505_02OVGa_AD_01.c3d';
+%Filename = 'SCI_HCU_20150505_02OVGa_AD_02.c3d';
+%Filename = 'SCI_HCU_20150505_02OVGa_AD_02.c3d';
 
 % Load the file
 [KIN,KINfreq,EMG,EMGfreq,Measures]=load_c3d(Filename);
@@ -45,27 +70,42 @@ KINtime = [1:length(KIN.Pos.L.ANK(1,:))]';
 KINtime = [KINtime, (KINtime-1)./KINfreq];
 EMGtime = [1:length(EMG.L.TA(1,:))]';
 EMGtime = [EMGtime, (EMGtime-1)./EMGfreq];
-  
-%% Plot left heel marker (vertical vs longitudinal)
-figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2)
 
-%plot3(KIN.Pos.L.HEE(1,:), KIN.Pos.L.HEE(2,:), KIN.Pos.L.HEE(3,:))
+%% read GAIT file to set the gait events 
+
+
+% create for healthy - plot initial contact and last contact 
+
+
+%% Plot left heel marker (vertical vs longitudinal)
+
+figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2)
 
 
 %% detect gait events (by eye) and show a graph
 
+
+% Heel strikes
 [~, L_HEEL_STRIKE] = findpeaks(-KIN.Pos.L.HEE(3,:), 'MinPeakDistance',50)
 [~, R_HEEL_STRIKE] = findpeaks(-KIN.Pos.R.HEE(3,:), 'MinPeakDistance',50)
+
+% Undrift heel and toe
+R_heel_signal = heel_drift_removal(KIN, R_HEEL_STRIKE, 'R');
+L_heel_signal = heel_drift_removal(KIN, L_HEEL_STRIKE, 'L');
+
+R_toe_signal = toe_drift_removal(KIN, KINtime, 'R');
+L_toe_signal = toe_drift_removal(KIN, KINtime, 'L');
+
 
 %Note: SHOW TOE OFF GRAPHICALLY
 
 % Plot left/right heel markers vertical vs time (+ heel-strikes)
-figure, plot(KINtime(:,2), KIN.Pos.L.HEE(3,:),'linewidth',2);
-hold on, plot(KINtime(:,2), KIN.Pos.L.TOE(3,:),'linewidth',2);
+figure, plot(KINtime(:,2), L_heel_signal,'linewidth',2);
+hold on, plot(KINtime(:,2), L_toe_signal,'linewidth',2);
 plot( KINtime(L_HEEL_STRIKE,2), 1 ,'o');
 
-figure, plot(KINtime(:,2), KIN.Pos.R.HEE(3,:),'linewidth',2);
-hold on, plot(KINtime(:,2),KIN.Pos.R.TOE(3,:),'linewidth',2);
+figure, plot(KINtime(:,2),  R_heel_signal,'linewidth',2);
+hold on, plot(KINtime(:,2), R_toe_signal,'linewidth',2);
 plot( KINtime(R_HEEL_STRIKE,2), 1 ,'o');
 
 
@@ -73,79 +113,53 @@ plot( KINtime(R_HEEL_STRIKE,2), 1 ,'o');
 % the heel marker. It could also be visualized through the z component of the same marker 
 % (when the plot becomes flat)
 
-%% drift removal for TOE
-% automatic
-t = KINtime(:,2);
-y =  KIN.Pos.L.TOE(3,:)';
-[p, S] = polyfit(t,y,1);
-plot(t,y)
-title('Plot of y Versus t')
 
-y2 = polyval(p,t);
-figure
-plot(t,y,'o',t,y2)
-title('Plot of Data (Points) and Model (Line)')
-
-y3 = y-y2;
-figure;
-plot(t,y3+(abs(y3(1)-y(1))))
-hold on
-plot(t,y)
-
-%% random stuff
-% figure
-% plot(KIN.Pos.L.HEE(3,:));
-% [t, y] = ginput(4);
-% [p, S] = polyfit(t,y,1);
-% y2 = polyval(p,t);
-% plot(t,y,'o',t,y2)
-%% remove drift for HEE
-%Needs IC points
-y1=KIN.Pos.L.HEE(3,:)
-query = KIN.Pos.L.HEE(3,L_HEEL_STRIKE);
-line = linspace(query(1),query(end),414);
-y2=KIN.Pos.L.HEE(3,:)-line;
-%diff=(y1(1)-y2(1));
-figure;
-plot(y2+abs(y2(1)-y1(1)));
-hold on
-plot(y1)
 %% compute gait parameters of your choice (at least 30 params based on kinematics and 5 based on
 %EMGs), and explain them - load patient data
  
 
 % compute the avarage temporal parameters - 
 % change 'R' with 'L' to get left side
+
+features_matrix = []; %problem: how to deal with the difference in length??
+
+% We get 4 features x 3 (1 per gait cycle) :
 [temp_features, temp_feat_names] = compute_spatiotemporal(KIN, KINtime, R_HEEL_STRIKE, 'R');
+[temp_features, temp_feat_names] = compute_spatiotemporal(KIN, KINtime, R_HEEL_STRIKE, 'L');
 
+% We get 3 features x 4 (1 per peak)
 [clearence_features, clea_feat_names] = compute_clearance(KIN, 'R'); 
+[clearence_features, clea_feat_names] = compute_clearance(KIN, 'L'); 
 
+% We get 1 feature
 PCI = intercycle_var( R_HEEL_STRIKE,  L_HEEL_STRIKE); %phase coordination index (inter-cycle variability)
 
+% We get 3 features x 414 (n of frames)
 [elev_angles, elev_angles_names] = elevation_angles(KIN, 'R');
+[elev_angles, elev_angles_names] = elevation_angles(KIN, 'L');
 
-compute_kinematics(KIN, R_HEEL_STRIKE, 'R');
-%[en_features, en_names] = com_energy(Measures, Mass);
-
-
-%symmetry index (need swing times)
-%turning angles
-
-%potential energy - com_energy
-%kinetic energy - com_energy
-%%
+% We geet 2 feature x 413 (n of frames -1)
+[en_features, en_names] = com_energy(KIN, Measures.Mass);
 
 
 
-%% read GAIT file to set the gait events (you can copy-paste in MTLB)
-
-% ciao = readtable('SCI_HCU_20150505_02OVGa_AD_01_GAIT.csv');
+%% Other stuff we still need
 
 
-% event = toe off
-% create for healthy - plot initial contact and last contact 
-% joint center - estimation
-% use marker position and angle elevation
+% pelvis  obliquity
+%trunk inclination and rigidity (frontal and horizontal planes)
+% step width
+% transverse foot angles 
+% step period
+% double stance - toe-off
+% symmetry
+% velocities
+%Foot Angular velocity
+% stance and swing vector
+% joint moment and power
+
+
+
 
 %% EMG: high pass filter (10-2k Hz)
 % HP 30 Hz to remove artifact movements
@@ -163,4 +177,3 @@ compute_kinematics(KIN, R_HEEL_STRIKE, 'R');
 %% discuss, extract relevant parameters, discuss, conclude
 
 
-%% 

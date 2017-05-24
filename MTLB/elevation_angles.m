@@ -33,7 +33,7 @@ a = x_toe - x_ankle;
 b = y_ankle - y_toe;
 theta_foot = atan(a./b);
 
-a = find(theta_foot<0)
+a = find(theta_foot<0);
 theta_foot(a) = theta_foot(a) + pi;
 
 figure; hold on;
@@ -43,6 +43,8 @@ subplot(3,1,2), plot(theta_shank);
 title('Shank elevation angle');
 subplot(3,1,3), plot(theta_thigh);
 title('Thigh elevation angle');
-    elev_angles = [theta_thigh; theta_shank];
-    names = ['Thigh elev. angle'; 'Shank elev. angle'];
+    elev_angles = [theta_foot; theta_thigh; theta_shank];
+    names = ['Foot elev. angle ';
+             'Thigh elev. angle'; 
+             'Shank elev. angle'];
 end

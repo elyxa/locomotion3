@@ -1,5 +1,9 @@
 function [stride_features, stridefeatures_names] = compute_kinematics(KIN, KINtime, IC, side)
 
+
+% THIS FUNCTION IS NOT REALLY USEFUL - JUST RANDOM STUFF :P
+
+
 kinematic_features = [];
 kinfeatures_names = [];
 
@@ -40,69 +44,7 @@ for i=1:length(joints)
     joint_ang_speed_mat = [ joint_ang_speed_mat; diff(KIN.Ang.(side).(joints{i})) ];
 end
 
-%% velocity calcul
-signal = KIN.Ang.(side).(joints{1});
-pwelch(signal,[],[],[],100)
-Nf = 50; 
-Fpass = 10; 
-Fstop = 12;
 
-d = designfilt('differentiatorfir','FilterOrder',Nf, ...
-    'PassbandFrequency',Fpass,'StopbandFrequency',Fstop, ...
-    'SampleRate',100);
-
-fvtool(d,'MagnitudeDisplay','zero-phase','Fs',100)
-
-dt = KINtime(2)-KINtime(1);
-vsignal = filter(d,signal)/dt;
-
-tt = KINtime(1:end-delay);
-vd = vsignal;
-vd(1:delay) = [];
-
-tt(1:delay) = [];
-vd(1:delay) = [];
-
-[pkp,lcp] = findpeaks(signal);
-zcp = zeros(size(lcp));
-
-[pkm,lcm] = findpeaks(-signal);
-zcm = zeros(size(lcm));
-
-subplot(2,1,1)
-plot(KINtime,signal,KINtime([lcp lcm]),[pkp -pkm],'or')
-xlabel('Time (s)')
-ylabel('Displacement (cm)')
-grid
-
-subplot(2,1,2)
-plot(tt,vd,KINtime([lcp lcm]),[zcp zcm],'or')
-xlabel('Time (s)')
-ylabel('Speed (cm/s)')
-grid
-
-adrift = filter(d,vdrift)/dt;
-
-at = t(1:end-2*delay);
-ad = adrift;
-ad(1:2*delay) = [];
-
-at(1:2*delay) = [];
-ad(1:2*delay) = [];
-
-subplot(2,1,1)
-plot(tt,vd)
-xlabel('Time (s)')
-ylabel('Speed (cm/s)')
-grid
-
-subplot(2,1,2)
-plot(at,ad)
-ax = gca;
-ax.YLim = 2000*[-1 1];
-xlabel('Time (s)')
-ylabel('Acceleration (cm/s^2)')
-grid
 %% Joints displacement matrix
 joint_disp_mat = [];
 
