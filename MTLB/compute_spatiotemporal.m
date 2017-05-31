@@ -1,4 +1,4 @@
-function [temporal_features, tempfeatures_names] = compute_spatiotemporal(KIN, KINtime, IC, side)
+function [temporal_features, tempfeatures_names] = compute_spatiotemporal(KIN, KINtime, IC, TO, side)
 
 
 temporal_features = [];
@@ -31,6 +31,7 @@ Cad = 120./GCT;
 
 SL=[];
 SV=[];
+SW=[];
 for i=1:num_steps-1
     
     %stride length
@@ -38,16 +39,16 @@ for i=1:num_steps-1
 
     % gait speed (stride velocity) 
     SV(i) = SL(i)/GCT(i);
+    
+    % swing / (swing+stance)
+    SW(i) = TO(i);
 end
 
 
 
 
-temporal_features = [GCT; Cad; SL; SV];
-tempfeatures_names = ['GCT         '; 
-                      'Cadence     '; 
-                      'StrideLength'; 
-                      'GaitSpeed   '];
+temporal_features = [GCT', Cad', SL', SV', SW'];
+tempfeatures_names = {'GCT' 'Cadence' 'StrideLength' 'GaitSpeed' 'Swing%'};
 
 
 

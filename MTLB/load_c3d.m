@@ -1,4 +1,4 @@
-function [Marker,MarkerFreq,EMG,AnalogFreq,Measures]=load_c3d(filename)
+function [Marker,MarkerFreq,EMG,AnalogFreq,Measures, FirstFrame]=load_c3d(filename)
 
 % load_VICON_c3d function read data from .c3d file and extract trajectory (markers positions),
 % forces and other analog data. Center of pression is also calculated
@@ -83,10 +83,10 @@ IDgroup=fread(fid,1,'int8');  % Group ID number (always negative)
 while Nchar > 0
     if IDgroup < 0
         IDgroup=abs(IDgroup);
-        groupName=fread(fid,[1,Nchar],'char'); % Group name (ASCII characters – upper case A-Z, 0-9 and underscore _ only)
+        groupName=fread(fid,[1,Nchar],'char'); % Group name (ASCII characters ? upper case A-Z, 0-9 and underscore _ only)
         offset=fread(fid,1,'int16');    % A signed integer offset in bytes pointing to the start of the next group/parameter.
         Nchar_desc=fread(fid,1,'int8'); % Number of characters in the Group description.
-        desc=fread(fid,[1,Nchar_desc],'char'); % Group description (ASCII characters – mixed case).
+        desc=fread(fid,[1,Nchar_desc],'char'); % Group description (ASCII characters ? mixed case).
         disp(sprintf('%s, %s',groupName,desc));
         
         fseek(fid,offset-3-Nchar_desc,'cof');
@@ -94,7 +94,7 @@ while Nchar > 0
         
     else
         groupName=group.(strcat('GROUP',(num2str(IDgroup))));
-        paramName=fread(fid,[1,Nchar],'char'); % Parameter name (ASCII characters – normally upper case numeric or underscore only)
+        paramName=fread(fid,[1,Nchar],'char'); % Parameter name (ASCII characters ? normally upper case numeric or underscore only)
         disp(sprintf('- %s',paramName));
         
         offset=fread(fid,1,'int16'); % A signed integer offset in bytes pointing to the start of the next group/parameter.
@@ -104,7 +104,7 @@ while Nchar > 0
         %% TRIAL BLOC
         if strcmp(sprintf('%c',groupName),'TRIAL') & strcmp(sprintf('%c',paramName),'ACTUAL_START_FIELD'),
             datatype = whichType(fid); % Data type (real, integer, ...)
-            Ndim=fread(fid,1,'int8'); % Number of dimensions (0-7) of the parameter – 0 if the parameter is scalar
+            Ndim=fread(fid,1,'int8'); % Number of dimensions (0-7) of the parameter ? 0 if the parameter is scalar
             dimension=fread(fid,[1,Ndim],'int8');  % Parameter dimensions
             if FirstFrame<0,
                 FirstFrame=fread(fid,1,'int32');
@@ -115,7 +115,7 @@ while Nchar > 0
             
         elseif strcmp(sprintf('%c',groupName),'TRIAL') & strcmp(sprintf('%c',paramName),'ACTUAL_END_FIELD'),
             datatype = whichType(fid); % Data type (real, integer, ...)
-            Ndim=fread(fid,1,'int8'); % Number of dimensions (0-7) of the parameter – 0 if the parameter is scalar
+            Ndim=fread(fid,1,'int8'); % Number of dimensions (0-7) of the parameter ? 0 if the parameter is scalar
             dimension=fread(fid,[1,Ndim],'int8');  % Parameter dimensions
             if LastFrame<0,
                 LastFrame=fread(fid,1,'int32');
@@ -126,7 +126,7 @@ while Nchar > 0
             
         elseif strcmp(sprintf('%c',groupName),'POINT') & strcmp(sprintf('%c',paramName),'LABELS'),
             datatype = whichType(fid); % Data type (real, integer, ...)
-            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter – 0 if the parameter is scalar
+            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter ? 0 if the parameter is scalar
             dimension=fread(fid,[1,Ndim],'int8');    % Parameter dimensions
             
             if dimension(2) < 0, dimension(2) = 2^7 - dimension(2); end
@@ -146,7 +146,7 @@ while Nchar > 0
             
         elseif strcmp(sprintf('%c',groupName),'ANALOG') & strcmp(sprintf('%c',paramName),'GEN_SCALE'),
             datatype = whichType(fid); % Data type (real, integer, ...)
-            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter – 0 if the parameter is scalar
+            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter ? 0 if the parameter is scalar
             dimension=fread(fid,[1,Ndim],'int8');    % Parameter dimensions
             if Ndim == 0,
                 paramData=fread(fid,1,datatype); % Parameter data
@@ -158,14 +158,14 @@ while Nchar > 0
             
         elseif strcmp(sprintf('%c',groupName),'ANALOG') & strcmp(sprintf('%c',paramName),'SCALE'),
             datatype = whichType(fid); % Data type (real, integer, ...)
-            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter – 0 if the parameter is scalar
+            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter ? 0 if the parameter is scalar
             dimension=fread(fid,[1,Ndim],'int8');    % Parameter dimensions
             paramData=fread(fid,dimension,datatype); % Parameter data
             param.SCALE=paramData;
             
         elseif strcmp(sprintf('%c',groupName),'ANALOG') & strcmp(sprintf('%c',paramName),'OFFSET'),
             datatype = whichType(fid); % Data type (real, integer, ...)
-            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter – 0 if the parameter is scalar
+            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter ? 0 if the parameter is scalar
             dimension=fread(fid,[1,Ndim],'int8');    % Parameter dimensions
             paramData=fread(fid,dimension,datatype); % Parameter data
             param.OFFSET=paramData;
@@ -173,7 +173,7 @@ while Nchar > 0
             
         elseif strcmp(sprintf('%c',groupName),'ANALOG') && strcmp(sprintf('%c',paramName),'LABELS'),
             datatype = whichType(fid); % Data type (real, integer, ...)
-            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter – 0 if the parameter is scalar
+            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter ? 0 if the parameter is scalar
             dimension=fread(fid,[1,Ndim],'int8');    % Parameter dimensions
             
             paramData=fread(fid,dimension,datatype); % Parameter data
@@ -196,7 +196,7 @@ while Nchar > 0
             
         elseif strcmp(sprintf('%c',groupName),'PROCESSING')
             datatype = whichType(fid); % Data type (real, integer, ...)
-            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter – 0 if the parameter is scalar
+            Ndim=fread(fid,1,'int8');  % Number of dimensions (0-7) of the parameter ? 0 if the parameter is scalar
             dimension=fread(fid,[1,Ndim],'int8');    % Parameter dimensions
             paramData=fread(fid,dimension,datatype); % Parameter data
             
@@ -466,5 +466,4 @@ end
 function NORM = normvec(vector)
 NORM = sqrt(sum(power(vector,2),1));
 end
-
 

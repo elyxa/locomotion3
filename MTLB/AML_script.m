@@ -1,3 +1,4 @@
+
 clear all
 close all
 clc
@@ -14,7 +15,7 @@ addpath(['../Healthy/Healthy2'])
 %% LOAD HEALTHY
 
 % Healthy subject #1
-    %Filename ='Healthy1_Walk03.c3d';
+    Filename ='Healthy1_Walk03.c3d';
     %Filename ='Healthy1_Walk04.c3d';
     %Filename ='Healthy1_Walk05.c3d';
     %Filename ='Healthy1_Walk06.c3d';
@@ -29,8 +30,8 @@ addpath(['../Healthy/Healthy2'])
 %% LOAD UNHAELTHY + read the gait file to set gait events
 
 % Unhealthy subject - Robot, NO crutches
-    Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05.c3d';
-    gaitFile = readtext('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05_GAIT.csv');
+    %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05.c3d';
+    %gaitFile = readtext('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_05_GAIT.csv');
 
     %Filename = 'SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06.c3d';
     %gaitFile = readtext('SCI_HCU_20150505_04OVGb_45BWS_vFWD_noAD_06_GAIT.csv');
@@ -54,8 +55,8 @@ addpath(['../Healthy/Healthy2'])
 
 
 %% Load the file
-[KIN,KINfreq,EMG,EMGfreq,Measures]=load_c3d(Filename);
-
+[KIN,KINfreq,EMG,EMGfreq,Measures, FirstFrame]=load_c3d(Filename);
+%FirstFrame
 % Data you have (KIN=kinematic / EMG=Electromyographic):
 % - KIN.Pos.X.YYY = 3D position of marker YYY on side X
 %                   - X = L (left), R (right)
@@ -81,14 +82,14 @@ addpath(['../Healthy/Healthy2'])
 
 
 % TIME (column #1 = sample# , column #2 = time (s))
-KINtime = [1:length(KIN.Pos.L.ANK(1,:))]';
+KINtime = [1:length(KIN.Pos.L.ANK(1,:))]' +FirstFrame;
 KINtime = [KINtime, (KINtime-1)./KINfreq];
-EMGtime = [1:length(EMG.L.TA(1,:))]';
+EMGtime = [1 :length(EMG.L.TA(1,:))]' + (FirstFrame*EMGfreq/KINfreq);
 EMGtime = [EMGtime, (EMGtime-1)./EMGfreq];
-
+ 
 
 %% Plot left heel marker (vertical vs longitudinal)
-figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2)
+figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2);
 
 %% HEALTHY - detect gait events and show a graph
 
@@ -97,16 +98,43 @@ figure, plot(KIN.Pos.L.HEE(2,:),KIN.Pos.L.HEE(3,:),'linewidth',2)
 [~, R_HEEL_STRIKE] = findpeaks(-KIN.Pos.R.HEE(3,:), 'MinPeakDistance',50);
 
 % Find Toe-off
+
 [~, R_Toe_STRIKE] = findpeaks(KIN.Pos.R.TOE(3,:),'MinPeakDistance',70);
-for i = 1:(length(R_Toe_STRIKE)-1)
-[~, Toe_off] = findpeaks(-KIN.Pos.R.TOE(3,R_Toe_STRIKE(i):R_Toe_STRIKE(i+1)),'MinPeakDistance',R_Toe_STRIKE(i+1)-R_Toe_STRIKE(i)-1);
-R_TOE_OFF(i) = Toe_off+R_Toe_STRIKE(i);
-end
  
+for i = 1:(length(R_Toe_STRIKE)-1)
+    n=1;
+    p=1;
+    for j = round((R_Toe_STRIKE(i+1)- R_Toe_STRIKE(i))/2+R_Toe_STRIKE(i)):R_Toe_STRIKE(i+1)
+    if KIN.Pos.R.TOE(3,j+1)>0.4*KIN.Pos.R.TOE(3,R_Toe_STRIKE(i+1))
+         if KIN.Pos.R.TOE(3,j)<0.4*KIN.Pos.R.TOE(3,R_Toe_STRIKE(i+1))
+            Toe_off(p) = n;  
+            p=p+1;
+         end
+    end
+     n=n+1;
+    end 
+    R_TOE_OFF(i) = Toe_off(1)+round((R_Toe_STRIKE(i+1)- R_Toe_STRIKE(i))/2+R_Toe_STRIKE(i));
+end
+% [~, Toe_off] = findpeaks(-KIN.Pos.R.TOE(3,R_Toe_STRIKE(i):R_Toe_STRIKE(i+1)),'MinPeakDistance',R_Toe_STRIKE(i+1)-R_Toe_STRIKE(i)-1);
+% R_TOE_OFF(i) = Toe_off+R_Toe_STRIKE(i);
+% end
+% Take many points and take the max
 [~, L_Toe_STRIKE] = findpeaks(KIN.Pos.L.TOE(3,:),'MinPeakDistance',70);
+ 
 for i = 1:(length(L_Toe_STRIKE)-1)
-[~, Toe_off_L] = findpeaks(-KIN.Pos.L.TOE(3,L_Toe_STRIKE(i):L_Toe_STRIKE(i+1)),'MinPeakDistance',L_Toe_STRIKE(i+1)-L_Toe_STRIKE(i)-1);
-L_TOE_OFF(i) = Toe_off_L+L_Toe_STRIKE(i);
+    n=1;
+    p=1;
+    Toe_off = 0;
+    for j = round((L_Toe_STRIKE(i+1)- L_Toe_STRIKE(i))/2+L_Toe_STRIKE(i)):L_Toe_STRIKE(i+1)
+    if KIN.Pos.L.TOE(3,j+1)>0.4*KIN.Pos.L.TOE(3,L_Toe_STRIKE(i+1))
+         if KIN.Pos.L.TOE(3,j)<0.4*KIN.Pos.L.TOE(3,L_Toe_STRIKE(i+1))
+            Toe_off(p) = n;  
+            p=p+1;
+         end
+    end
+     n=n+1;
+    end 
+    L_TOE_OFF(i) = Toe_off(1)+round((L_Toe_STRIKE(i+1)- L_Toe_STRIKE(i))/2+L_Toe_STRIKE(i));
 end
 
 %FOR TOE OFF
@@ -130,8 +158,12 @@ L_HEEL_STRIKE=L_HEEL_STRIKE(L_HEEL_STRIKE<max(L_TOE_OFF));
 
 %% UNHEALTHY - gait events
 
-[R_HEEL_STRIKE, L_HEEL_STRIKE, R_TOE_OFF, L_TOE_OFF ] = read_gait_events(gaitFile, KINtime);
+[R_HEEL_STRIKE, L_HEEL_STRIKE, R_TOE_OFF, L_TOE_OFF ] = read_gait_events(gaitFile, KINtime) ;
 
+R_HEEL_STRIKE= R_HEEL_STRIKE - FirstFrame;
+L_HEEL_STRIKE = L_HEEL_STRIKE - FirstFrame;
+R_TOE_OFF = R_TOE_OFF - FirstFrame;
+L_TOE_OFF = L_TOE_OFF - FirstFrame;
 %% Undrift heel and toe
 R_heel_signal = heel_drift_removal(KIN, R_HEEL_STRIKE, 'R');
 L_heel_signal = heel_drift_removal(KIN, L_HEEL_STRIKE, 'L');
@@ -174,8 +206,8 @@ features_matrix = []; %problem: how to deal with the difference in length??
 [temp_features, temp_feat_names] = compute_spatiotemporal(KIN, KINtime, R_HEEL_STRIKE, 'L');
 
 % We get 3 features x 4 (1 per peak)
-[clearence_features, clea_feat_names] = compute_clearance(KIN, 'R'); 
-[clearence_features, clea_feat_names] = compute_clearance(KIN, 'L'); 
+[clearence_features, clea_feat_names] = compute_clearance(KIN, R_HEEL_STRIKE, R_TOE_OFF,'R'); 
+[clearence_features, clea_feat_names] = compute_clearance(KIN, L_HEEL_STRIKE, L_TOE_OFF, 'L'); 
 
 % We get 1 feature
 PCI = intercycle_var( R_HEEL_STRIKE,  L_HEEL_STRIKE); %phase coordination index (inter-cycle variability)
@@ -191,18 +223,18 @@ PCI = intercycle_var( R_HEEL_STRIKE,  L_HEEL_STRIKE); %phase coordination index 
 DS = double_support(R_HEEL_STRIKE,  L_HEEL_STRIKE, R_TOE_OFF, L_TOE_OFF, KINtime);
 
 %% Other stuff we still need
-
+% each line - each gait cycle
+ %normalize 0 100
 
 % pelvis  obliquity
 %trunk inclination and rigidity (frontal and horizontal planes)
 % step width
 % transverse foot angles 
-% step period
 % symmetry
 % velocities
 %Foot Angular velocity
 % stance and swing vector
-% joint moment and power
+
 
 
 

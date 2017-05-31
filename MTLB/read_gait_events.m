@@ -1,4 +1,4 @@
-function [rIC, lIC, rTO, lTO] = read_gait_events(gaitFile, KINtime)
+function [rIC, lIC, rTO, lTO] = read_gait_events(gaitFile, KINtime, KINfreq, FirstFrame)
 
 n_rows = size(gaitFile,1);
 
@@ -33,19 +33,10 @@ for i=3:n_rows
 end
 
 
-rIC = ceil(100.*rIC);
-lIC = ceil(100.*lIC);
-rTO = ceil(100.*rTO);
-lTO = ceil(100.*lTO);
-
- max_timeframe = size(KINtime,1);
- rIC(find(rIC>max_timeframe)) = [];
- lIC(find(lIC>max_timeframe)) = [];
- rTO(find(rTO>max_timeframe)) = [];
- lTO(find(lTO>max_timeframe)) = [];
-
-
-
+    rIC = ceil(KINfreq*rIC)-FirstFrame;
+    lIC = ceil(KINfreq*lIC)-FirstFrame;
+    rTO = ceil(KINfreq*rTO)-FirstFrame;
+    lTO = ceil(KINfreq*lTO)-FirstFrame;
 
 
 end
